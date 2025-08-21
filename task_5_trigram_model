@@ -4,6 +4,7 @@ from nltk.tokenize import word_tokenize
 from collections import defaultdict
 import random
 
+# Download tokenizer data
 nltk.download('punkt')
 
 corpus_text = """
@@ -11,27 +12,47 @@ Hola, me llamo Ashok y soy de India. Actualmente estudio en la Universidad Velte
 Mis cosas favoritas son bailar y jugar cricket. Todos los días escucho música.
 """
 
+# Tokenize and keep words including accented characters and alphabets
 tokens = word_tokenize(corpus_text.lower())
-tokens = [word for word in tokens if word.isalpha()]
+tokens = [word for word in tokens if word.isalpha() or ('á' in word) or ('í' in word) or ('ó' in word) or ('ú' in word) or ('é' in word) or ('ñ' in word)]
 
+# Build trigrams
 trigrams = list(ngrams(tokens, 3))
 
+# Build the model: (w1, w2) -> list of possible w3
 model = defaultdict(list)
 for w1, w2, w3 in trigrams:
     model[(w1, w2)].append(w3)
 
-def generate_text(model, start_words, length=50):
+def generate_text(model, start_words=None, length=50):
+    if not start_words:
+        # Pick a random starting bigram if none provided
+        start_words = random.choice(list(model.keys()))
     w1, w2 = start_words
     output = [w1, w2]
+    
     for _ in range(length):
-        next_words = model.get((w1, w2), None)
+        next_words = model.get((w1, w2))
         if not next_words:
-            break
+            # If no next words found, pick random bigram to continue
+            w1, w2 = random.choice(list(model.keys()))
+            next_words = model[(w1, w2)]
         w3 = random.choice(next_words)
         output.append(w3)
         w1, w2 = w2, w3
+        
     return ' '.join(output)
 
-start = ('me', 'llamo')
-generated = generate_text(model, start_words=start, length=50)
-print("Generated Text:\n", generated)
+# Print some info for debugging
+print(f"Sample keys in model: {list(model.keys())[:5]}")
+
+# Let user pick start words or random
+start = input("Enter two start words separated by space (or press enter for random start): ").lower().split()
+if len(start) != 2 or tuple(start) not in model:
+    print("Invalid or no start words provided. Using random start words.")
+    start = None
+else:
+    start = tuple(start)
+
+generated_text = generate_text(model, start_words=start, length=50)
+print("\nGenerated Text:\n", generated_text)
