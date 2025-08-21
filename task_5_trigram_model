@@ -1,0 +1,37 @@
+import nltk
+from nltk.util import ngrams
+from nltk.tokenize import word_tokenize
+from collections import defaultdict
+import random
+
+nltk.download('punkt')
+
+corpus_text = """
+Hola, me llamo Ashok y soy de India. Actualmente estudio en la Universidad Veltech en Chennai.
+Mis cosas favoritas son bailar y jugar cricket. Todos los días escucho música.
+"""
+
+tokens = word_tokenize(corpus_text.lower())
+tokens = [word for word in tokens if word.isalpha()]
+
+trigrams = list(ngrams(tokens, 3))
+
+model = defaultdict(list)
+for w1, w2, w3 in trigrams:
+    model[(w1, w2)].append(w3)
+
+def generate_text(model, start_words, length=50):
+    w1, w2 = start_words
+    output = [w1, w2]
+    for _ in range(length):
+        next_words = model.get((w1, w2), None)
+        if not next_words:
+            break
+        w3 = random.choice(next_words)
+        output.append(w3)
+        w1, w2 = w2, w3
+    return ' '.join(output)
+
+start = ('me', 'llamo')
+generated = generate_text(model, start_words=start, length=50)
+print("Generated Text:\n", generated)
