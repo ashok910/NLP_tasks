@@ -1,0 +1,32 @@
+import nltk
+from nltk.lm import Laplace
+from nltk.lm.preprocessing import padded_everygram_pipeline
+from nltk.tokenize import word_tokenize
+from nltk.util import ngrams
+
+nltk.download('punkt_tab')
+
+text = "I love natural language processing and I love machine learning."
+
+tokenized_text = [word_tokenize(text.lower())]
+
+# Prompt user for n-gram order
+n = int(input("Enter the value of n: "))
+
+# Prepare training data
+train_data, padded_vocab = padded_everygram_pipeline(n, tokenized_text)
+
+# Train Laplace smoothed n-gram model
+model = Laplace(order=n)
+model.fit(train_data, padded_vocab)
+
+test_sentence = input("Enter a sentence to evaluate: ").lower()
+test_tokens = word_tokenize(test_sentence)
+
+test_ngrams = list(ngrams(['<s>'] * (n - 1) + test_tokens + ['</s>'], n))
+
+print(f"\nProbabilities of words in the sentence with Laplace smoothing (n={n}):")
+for ng in test_ngrams:
+    context, word = ng[:-1], ng[-1]
+    prob = model.score(word, context)
+    print(f"P({word} | {context}) = {prob:.4f}")
